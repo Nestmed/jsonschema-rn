@@ -449,3 +449,55 @@ This library would not be possible without the valuable contributions by:
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
+
+## Custom Validator with Null Support
+
+This library includes a custom validator that extends the standard JSON Schema validation with support for nullable fields:
+
+1. Null values are considered valid for any type (ignoring type validation for nulls)
+2. Null values are allowed for enum properties
+3. Properties that are null or missing are skipped during validation
+4. Null instances are properly handled for additionalProperties validation
+
+### Usage
+
+```javascript
+var jsonSchema = require('jsonschema');
+
+// The default validate function now uses the custom validator
+var result = jsonSchema.validate(instance, schema);
+
+// You can also directly access the custom validate function
+var result = jsonSchema.customValidate(instance, schema);
+
+// If you need the standard validation behavior:
+var result = jsonSchema.standardValidate(instance, schema);
+```
+
+### Example
+
+```javascript
+var jsonSchema = require('jsonschema');
+
+var schema = {
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "status": { "type": "string", "enum": ["active", "inactive"] }
+  },
+  "required": ["name"]
+};
+
+// These will all pass validation with the custom validator
+jsonSchema.validate({ "name": "John", "status": null }, schema);
+jsonSchema.validate({ "name": "John" }, schema);
+jsonSchema.validate(null, schema);
+
+// This would fail with standard validation but passes with custom validation
+var instance = { "name": "John", "status": null };
+var customResult = jsonSchema.validate(instance, schema);
+var standardResult = jsonSchema.standardValidate(instance, schema);
+
+console.log(customResult.valid); // true
+console.log(standardResult.valid); // false
+```
